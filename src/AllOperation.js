@@ -1,10 +1,11 @@
 import React from "react";
-import { Formik } from "formik";
+import Insertdata from "./Insertdata";
 import axios from "axios";
-import * as yup from "yup";
 import { useState, useEffect } from "react";
+import { Modal, ModalHeader, ModalBody } from "reactstrap";
 const baseurl = "https://myservicesapi.com/api/Products";
-function AllOperation() {
+function AllOperation(args) {
+  const [modal, setmodal] = useState(false);
   const [products, setproducts] = useState([]);
   const [toggle, settoggle] = useState(false);
   const [toggle2, settoggle2] = useState(false);
@@ -16,6 +17,10 @@ function AllOperation() {
     Price: "",
     Status: "",
   });
+  const [message, setmessage] = useState("");
+  const toggl = () => {
+    setmodal(!modal);
+  };
   useEffect(() => {
     axios
       .get(baseurl)
@@ -36,6 +41,7 @@ function AllOperation() {
         })
         .catch((error) => {
           console.log(error);
+          setmessage("Product not found with this id");
         });
     } catch (error) {}
     settoggle2(!toggle2);
@@ -45,7 +51,50 @@ function AllOperation() {
     const cname = event.target.name;
     const cvalue = event.target.value;
     setproduct((prevstate) => ({ ...prevstate, [cname]: cvalue }));
+    setmessage("");
   };
+  const ondeletehandler = async ({ resetForm }) => {
+    try {
+      await axios
+        .delete(baseurl + "/" + product.Id)
+        .then((response) => {
+          console.log(response);
+          setTimeout(() => {
+            alert("Product deleted successfully");
+          });
+          resetForm();
+        })
+        .catch((error) => {
+          console.log(error);
+          setmessage("Product not found with this id");
+        });
+    } catch (error) {
+      console.log(error);
+      console.log();
+    }
+    settoggle2(!toggle2);
+    settoggle(toggle);
+  };
+  const updatehandler = async ({ resetForm }) => {
+    try {
+      await axios
+        .put(baseurl + "/" + product.Id, product)
+        .then((response) => {
+          console.log(response);
+          alert("Product updated successfully");
+          resetForm();
+        })
+        .catch((error) => {
+          console.log(error);
+          setmessage("Product not found with this id");
+        });
+    } catch (error) {
+      console.log(error);
+    }
+    settoggle2(!toggle2);
+    settoggle(toggle);
+  };
+
   return (
     <>
       <div
@@ -116,13 +165,24 @@ function AllOperation() {
           </div>
           <div>
             <button onClick={() => settoggle(!toggle)}>View/Hide All</button>
-            <button>Create</button>
-            <button>Delete</button>
-            <button>Update</button>
+            <button onClick={toggl}>Create</button>
+            <button onClick={ondeletehandler}>Delete</button>
+            <button onClick={updatehandler}>Update</button>
             <button onClick={onfindhandler}>Find</button>
           </div>
         </div>
       </div>
+      <div>
+        {message.length > 0 ? (
+          <div style={{ color: "red" }}> Product not found with this id </div>
+        ) : null}
+      </div>
+      <Modal isOpen={modal} toggle={toggl} {...args}>
+        <ModalHeader toggle={toggl}>Modal title</ModalHeader>
+        <ModalBody>
+          <Insertdata></Insertdata>
+        </ModalBody>
+      </Modal>
       <div>
         {toggle ? (
           <table className="styled-table">
@@ -159,7 +219,7 @@ function AllOperation() {
           </table>
         ) : null}
       </div>
-      {toggle2 && !toggle ? (
+      {toggle2 && !toggle && message.length === 0 ? (
         <table className="styled-table">
           <tbody>
             <th>
